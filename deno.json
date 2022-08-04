@@ -1,0 +1,7 @@
+{
+  "tasks": {
+    "ci": "deno fmt --check && deno lint && deno test",
+    "fix": "deno fmt && deno lint && deno test",
+    "cov": "deno test --coverage=.cov && deno coverage .cov && rm -rf .cov"
+  }
+}
