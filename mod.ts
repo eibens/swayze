@@ -14,6 +14,17 @@ function createSubs() {
   };
 }
 
+function wrapDeps<T extends [...unknown[]]>(deps: Deps<T>, f: Sub) {
+  deps.forEach((dep) => {
+    dep.sub(() => f());
+  });
+  return {
+    get: (): T => {
+      return deps.map((d) => d.get()) as T;
+    },
+  };
+}
+
 /** MAIN **/
 
 export type Dep<T> = {
@@ -33,24 +44,22 @@ export function fun<Y, X extends [...unknown[]]>(
   f: (...x: X) => Y,
   ...deps: Deps<X>
 ): Dep<Y> {
-  let dirty = true;
+  let dirty = false;
   let value: Y | undefined;
   let initial = true;
 
   const { sub, pub } = createSubs();
-  deps.forEach((dep) => {
-    dep.sub(() => {
-      dirty = true;
-      pub();
-    });
+
+  const { get } = wrapDeps(deps, () => {
+    dirty = true;
+    pub();
   });
 
   return {
     sub,
     get: () => {
       if (!dirty && !initial) return value!;
-      const args = deps.map((d) => d.get()) as X;
-      value = f(...args);
+      value = f(...get());
       initial = false;
       dirty = false;
       return value;
